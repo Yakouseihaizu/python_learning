@@ -1,0 +1,139 @@
+一、分层索引
+    1.MultiIndex
+        pandas对象可以在一个轴向上拥有多个索引的层次，相当于以低维度形式，处理高维度的信息
+        Series对象：
+            pd.Series(...,index,..):
+                index参数   如果是一个一维数组，和之前一样，是一层索引
+                            如果是一个高位数组，要求是必须长度一致，是分层索引，从前到后依次降低层次
+            SeriesObj中进行选择：
+                SeriesObj[index] ------------------------ index针对的是最外层，可以是切片或者是神奇索引
+                SeriesObj[index1,index2,...] ------------ 依次进行筛选
+        DataFrame对象：
+            可以从多层索引的Series获得：
+                SeriesObj.unstack(level,filv) ------------- level是int，表示抽出来作为columns的层，用filv填充Nan
+                                                            如果是list，会依次从上向下将index的层次放在columns中
+
+                DataFrame.stack(level,dropna) ---------- level是一个int或者是一个list，将columns的第int个level放在index中最里面
+                                                            如果是list，会依次从左向右将columns的层次放在index中
+                                                            dropna：    True ---> 全部按并集填充index，有Nan
+                                                                        False --> 将Nan所在行全部抛弃
+            可以直接生成：
+                pd.DataFrame(...,index,columns,...)：
+                    index和columns都可以按照之前的方式设置多层索引
+            分层索引可以有自己的name：
+                DataFrame.index.names = [name1,name2] -------------> 分别从外到内命名
+                DataFrame.columns.names = [name1,name2] -----------> 分别从左到右命名
+            分层索引的选取：
+                DataFrameObj[column1,column2...] ---------- 按照列依次按层次进行筛选
+                DataFrameObj.loc[index1,index2] ----------- 按照列依次按层次进行筛选，index对应的是tuple
+                DataFrameObj.iloc[index] ------------------ 只能处理一行，index是总的位置
+        MultiIndex对象：
+            MultiIndex.from_arrays(array,names) ----------- 按照自己的array进行分组，是等长的，names可以自命名
+            MultiIndex.from_tuples(tuples,names) ---------- 按照tuples进行分组，长度为level的数量
+            MultiIndex.from_product(iterable,names) ------- 按照iterable的内容求笛卡尔积
+            MultiIndex.from_frame(frame) ------------------ 按照frame的内容，将columns转化为names
+    
+    2.重排序和层级排序：
+        DataFrameObj.swaplevel(i,j,axis=0) -------------------------- 将axis中的第i和第j个层次进行交换，但是不合并
+        DataFrameObj.sort_index(axis,level,ascending,inplace,kind) -- 在axis中，按level进行进行排序，如果是外侧，则会合并
+                                                                      ascending：   是否升序
+                                                                      inplace：     是否替代
+                                                                      kind：        表示自己的排序方法
+
+    3.按层级进行汇总统计：
+        通用函数，或者统计函数都可以专门应用于某个层次索引：
+        level参数会保留，另外一个方向上不变
+    
+    4.使用DataFrame的列进行索引：
+        set_index(keys,drop,append,inplace) ------------------- 将自己的columns中的keys放在index中。
+                                                                keys表示自己选择转换的level
+                                                                drop表示是否将转换的level去除
+                                                                append表示是否保留最开始的0-n的index
+            PS: 其中的set_index的keys必须是对应的多层的index，用层次数量表示自己的层次，
+            注意：      不能用names！！！
+        reset_index(level,drop,inplace,col_level,col_fill) ---- 将自己的index中的levels放在columns中。
+                                                                level表示自己的选择转换的level
+                                                                inplace表示自己是否替代原来的DataFrame
+                                                                col_level，在columns插入的等级
+                                                                col_fill， 将插入的其他空格全部填充为col_fill
+            PS: 其中的level必须是names中的内容！！！
+    
+二、联合与合并数据集：
+    联合
+    1.数据库风格的DataFrame连接：
+        pd.merge(left,right,how,on,left_on,right_on,
+                 left_index,right_index,sort,suffixes,
+                 copy,indicator)
+        参数：
+            left        :合并时操作左边的DataFarame
+            right       :合并时操作右边的DataFrame
+            how         :'inner' -------- 默认，交集
+                         'outer' -------- 并集
+                         'left' --------- 左边的index(s)为基准
+                         'right' -------- 右边的index(s)为基准
+                         'cross' -------- on的笛卡尔积
+            on          :需要连接的列名。必须时两边DataFrame都有的列名
+                         并以left和right中的列名的how为连接键
+            left_on     :left DataFrame中用作连接键的列，和right_on的必须共用，表示合并后列的选择
+            right_on    :right DataFrame中用作连接键的列
+            left_index  :使用left的index作为他的连接键，可以是multiindex
+            right_index :使用right的index作为他的连接键，可以是multiindex
+            sort        :通过按照字母序对合并的数据进行排序，默认是True
+            suffixes    :左右对应后缀的元组，在列名重叠的时候，通过分别向left和right添加后缀实现区分，
+                         默认是('_x','_y')
+            copy        :是否复制
+            indicator   :通过添加一列merge，展示数据的来源，'both','left_only','right_only'
+    2.按照索引合并（merge也能实现）    
+        DataFrameObj.join(other,on, how, lsuffix, rsuffix,sort,validate):
+        类似于是将前面的left_index = True，同时也可以自己设置
+        参数： 
+            onther      :表示加入的对象，可以是单独的一个DataFrame，也可以是一个DataFrame列表
+            on          :从DataFrame中找到对应的连接键，如果没有设置，就是index
+            how         :同上
+            lsuffix     :只在右边是单一的DataFrame的时候有用，表示重复的左边列名加的后缀
+            rsuffix     :只在右边是单一的DataFrame的时候有用，表示重复的右边列名加的后缀
+            sort        :同上
+            validate    :表示合并的方式，包括1:1,m:m,1:m,m:1
+    堆叠：
+    3.沿轴向合并：
+        pd.concat(objs, *,axis,join, ignore_index, keys, levels,names,verify_integrity,sort,copy)
+        objs                :需要连接的pandas对象列表或字典，这是必须参数。
+                             可以由DataFrame或者时Series组成元素
+                             当是一个列表时，表示按顺序连接的对象
+                             当时一个字典时，其中的keys可以当作对应的标签，可以作为一个index或者columns
+        axis                :表示自己堆叠的方向，
+                             对于Series对象 -------------- 0表示沿着index，1表示建立一个DataFrame
+                             对于DataFrame对象 ----------- 0表示沿着columns对齐，即沿着index堆叠
+                                                          1表示沿着index对齐，即沿着columns堆叠
+        join                :可以是inner或者是outer，表示是内接还是外接
+        join_axes           :用于指定其他n-1轴的特定索引，可以替代内/外join的逻辑
+        keys                :与要连接的对象相关联的值，沿着连接轴形成分层索引
+        levels              :在键值传递时，该参数用于指定多层索引的层级
+        names               :如果传入了key或者levels，用于给多层索引命名
+        verify_integrity    :检查对象中的新轴是否存在重复，有重复引发异常，默认允许重复(False)
+        ingnore_index       :不沿着连接轴保留索引，而是产生一段新的默认索引
+    4.联合重叠数据：
+        通过逻辑方式将数据进行“修补”：
+            pdObj.combine_first(others) ----------------------- 将pdObj中的数据中的缺失值用others中的值代替，index/columns自动对齐
+                                                                但是如果others中有pdObj中没有的index，columns，会自动增加行/列
+    
+三、重塑和透视：
+    1.使用多重索引进行重塑：
+        见前面的stack和unstack方法的注释
+    2.将长透视成宽：
+        即将多个主键 --- 一个value 的数据转换成  一个key --- 多个数据(用分组键的值作为新的column，类似groupby)
+        DataFrameObj.pivote(index,columns,values):
+            其中index和columns必须，三者是对应的index的值
+            将DataFrameObj中的列（表示主键和一个value）作为index和columns进行分解
+            将其中的value填充到对应的位置，
+            如果是多个value，会生成多个左右的子表（有多层索引的columns，最外层分value）
+    3.将宽透视成长：
+        pd.melt(frame, id_vars,value_vars, var_name,value_name,col_level,ignore_index)
+            frame:      对象,必须是DataFrame
+            id_vars:    设置为id的列
+            val_vars：  设置为values的列
+            value_name: 设置value列的name
+            var_name:   设置var列的name
+            col_level:  适用于多重数组
+            ignore_index:同上
+

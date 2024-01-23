@@ -1,0 +1,265 @@
+一、日期和实践数据的类型及工具
+    见autopy
+    dateuntil.parse.parse方法
+        自动解析字符串形式的日期
+            对于 %d/%m/%Y和 %m/%d/%Y 都符合的情况下，默认第二种，可以通过dayfirst=True
+    pandas还有自己的转化函数
+        pandas.to_datetime(arg,errors,dayfirst,yearfirst,utc,
+                            format,exact,unit,infer_datetime_format,origin,cache)
+            arg         可以是int，float作为UNIX纪元时间戳开始的事件 ----------- 返回Timestamp
+                        也可以是列表或者是一维数组 ---------------------------- 返回datetimeIndex
+            errors       {'ignore', 'raise', 'coerce'}, default 'raise'
+                            ignore      直接忽视
+                            raise       引发异常
+                            coerce      NaT
+            unit        表示基本单位
+            origin      表示起源，可以是unix纪元，儒略历（单位是D），自设时间等
+            format      日期匹配的方式
+            infer_datetime_format       是否利用parse_date实现，默认是False
+            cache       是否利用缓存加速解析
+
+二、时间序列timeSeries基础：
+    基础时间序列 -------- DatetimeIndex为Index(由时间戳索引)组成的Series
+    运算和基本的Series基本一致
+
+    时间戳TimeStamp：
+        datetime64[ns]  数据类型 ------------ 可以应用在datetime对象中
+                        除此之外还可以存储频率freq信息
+    
+    1.索引、选择、子集：
+        基于标签进行索引和选择时，时间序列与Series类似，
+        实现切片地过程中，由于时间序列是按照时间顺序排列的，可以使用时间序列之外的timestamp进行切片
+
+        除此之外：
+            可以通过传递一个能解释为日期的字符串 ------------- 会自动地解析，转化成对应地timestamp
+            可以传递一年，一个月    ------------------------- 实现在时间范围内地切片
+
+        类似的方法可以使用在由Datetimeindex的DataFrameObj中
+            eg: []和loc[]
+        tsObj.turncate(before,after,axis)------------------ 在两个日期之间的时间切片
+
+    2.含有重复索引的时间序列：
+        重复序列选择和切片以及groupby方法和array都类似
+
+三、日期范围、频率和移位：
+    1、生成时间范围： ------------------------- 特定时间内或者是特定频率的范围选择
+        date_range(start,end,periods,freq,tz,normalize,name,inclusive,unit)
+            start           开始时间
+            end             结束时间
+            periods         采样次数，（几次）
+            freq            采样频率，（每隔多少时间）
+            tz              时区
+            normalize       归到零点
+
+        部分频率：
+            D                           Day                     日历的每天
+            b                           BusinessDay             工作日的每天
+            H                           Hour                    每小时
+            T/min                       Minute                  每分钟
+            S                           Second                  每秒
+            L/ms                        Milli                   每毫秒
+            U                           Micro                   每微妙
+            M                           MonthEnd                日历日的月底日期
+            BM                          BusinessMonthEnd        工作日的月底日期
+            MS                          MonthStart              日历的月初日期
+            BMS                         businessMonthStart      工作日的月初日期
+            W-MON,W-TUE...              Week                    按照每周的特定星期选取
+            WOM-1MON,WOM-2MON...        WeekOfMonth             每个月的第几个周几
+            Q-JAN,Q-FEB...              QuaterEnd               每个月的最后一个日历日的季度日期（3个月3个月月末算）
+            BQ-JAN,BQ-FEB...            BusinessQuaterEnd       每个月的最后一个工作日的季度日期（3个月3个月月末算）
+            QS-JAN,QS-FEB...            QuaterStart             每个月的第一个日历日的季度日期（3个月3个月月初算）
+            BQS-JAN,BQS-FEB...          BusinessQuaterStart     每个月的第一个工作日的季度日期（3个月3个月月初算）
+            A-JAN,A-FEB...              YearEnd                 给定月份的最后日历日所对应的年度日期（一年一年月末算）
+            BA-JAN,BA-FEB...            BusinessYearEnd         给定月份的最后工作日所对应的年度日期（一年一年月末算）
+            AS-JAN，AS-FEB...           YearStart               给定月份的第一个日历日所对应的年度日期（一年一年月初算）
+            BAS-JAN,BAS-FEB...          BusinessYearStart       给定月份的第一个工作日所对应的年度日期（一年一年月初算）
+        
+        自由设定频率和偏置量：
+            pandas.tseries.offsets 中有Hour,Minute等类
+                Hour(int)       int小时的频率   = int*Hour()
+                Minute(int)     int分钟的频率   = int*Minute()
+            可以直接作为freq使用
+            同时date_range()  还能通过字符串设定如‘4h’,'1h30min'等
+        
+    2.移位（向前向后）日期：
+        pdObj.shift(periods,freq,axis,fill_value):
+            如果没有freq    对于一般的Series则将value在axis上进行位移（正向下位移，负向上位移）
+            如果没有freq    表示DatetimeIndex按照freq位移
+            period         表示移动的单位数，freq未指定的时是对value移动格数，freq指定时是对于index移动freq
+
+        对于锚定偏置量本身，如M，BMS等可以通过offsetObj的rollforward()和rollback()实现向前向后的时间位移
+            返回的是timestamp对象，可以用在groupby中用于分组，类似于resample方法    见下
+        PS：    
+            shift移动和rollXXX方法 对于锚定偏置量的一些小差别：
+            使用rollforward和rollback的时候，如果是1月31日 rollforward 会返回1-31日期
+            如果是使用Shift方法中的freq参数进行设定，则使1月31日返回2-1日期
+
+四、时区处理：
+    1.时区本地化和转化：
+        pyzt库 ------------ 第三方时区库（pandas已封装）
+
+        对于pdObj（主要是ts和含有DatetimeIndex的数据结构）
+                有tz_localize()和tz.convert()方法实现时区处理
+
+        pdObj.tz_localize(tz:,axis,level,copy,ambiguous,nonexistent)
+            实现日期的本地化，（将时间数据本地化成当地时间，示值不变）
+            tz:             str或者自建的tzinfo，str要和pytz中的一致
+            ambiguous:      模糊处理，主要受到DST(夏令时)的影响，
+                                默认是'raise',可以设置'infer'自行推断或者'NaT'缺失值
+            nonexistent:    对于由于DST出现的不可能时间处理  
+                                默认是'raise',可以设置'shift_forward','shift_back'或'NaT'以及人为设定timedelta处理
+        pdObj.tz_convert(tz,axis,level,copy)
+            将已经本地化的日期，在不同时区之间进行转换（示值发生改变）
+    2.时区感知时间戳对象的操作：
+        可以在pd.Timestamp()创建类的过程中，通过tz参数直接设置时区信息
+        在时区转化的过程中，变化的是示值，时间是不变的，即Timestamp对象的value是不变的
+        同时,pandas处理日期会尽可能按照DST等方式认定
+    3.不同时区间的操作
+        如果涉及到不同时区的date的运算或者合并，会按照UTC格式统一处理
+
+五、时间区间和区间算术：
+    时间区间（Period）对象：
+        表示时间范围，使用freq设置其频率，频率决定时间区间的长度
+        pd.Period(value,freq,ordinal,year,month,quarter,day,hour,minute,second)
+            value           表示Period所在的绝对时间位置
+            freq            表示period的长度和范围
+            year,month等    在value未设定的时候，使用year,month等确定开始时间
+            ordinal         表示从开始时间之后，偏置多少个freq作为真正的开始
+    
+        可以通过period_range设置标准区间的序列
+        pd.period_range(start, end, periods,freq,name) 
+            类似date_range方法
+    
+        也可以自定义设定：
+            pd.PeriodIndex(data,ordinal,freq,tz,dtype,copy,name,**fields)
+                data        可以设定为str的list等Arraylike对象
+                其他类似
+
+        还可以通过数组设定          见下
+    
+    对于频率相同的区间，可以进行加减
+        +- int      返回Period对象，在period的开始位置平移int个freq
+        - Period    返回offset对象，表示两个Period的开始位置的偏置
+    1.区间频率转换：
+        PeriodObj.asfreq(freq,how)
+            freq        转换为对应的频率
+            how         'end'或'start'，表示从长区间到短区间时，按照开头或者最后
+                            默认是end
+        pdObj.asfreq(freq,method,how,normalize,fill_value)
+            同时适用于dateindex和periodindex
+            对于dateIndex       有methond，表示填值方法'bfill,'ffill'
+            对于period          无methond参数，只使用freq和how
+                PS: 使用这个方法的时候 value 和 行数 不变，只改变频率
+        PS: 锚定频率的设置：
+                        period('2011','A-DEC')
+            start                                       end
+             |                                           |
+            JAN FEB MAR Apr May JUN JUL AGU SEP Oct Nov Dec
+                                 |
+                        period('2010-JUN','M')
+
+                        period('2011','A-JUN')
+            start                                       end
+             |                                           |
+            JUL AGU SEP Oct Nov Dec JAN FEB MAR Apr May JUN
+    
+    2.季度区间频率：
+        季度区间的设定：
+                        JAN FEB MAR Apr May JUN JUL AGU SEP Oct Nov Dec
+            Q-JAN       Q4 |    Q1     |     Q2    |     Q3    |   Q4 
+            Q-DEC            Q1    |     Q2    |     Q3    |    Q4 
+        将period转换为timestamp:
+            to_timestamp(freq,how)      
+                freq        表示频率
+                how:        默认start（到秒），end的单位是ns(不受freq精准度的影响)
+        
+    3.时间戳转换为区间：
+        to_period(freq,copy)
+            时间戳 ----> 时间戳所在的freq长度的区间（由于是唯一的，因此不需要指定how
+    
+    4.从数组生成PeriodIndex对象：
+        pd.PeriodIndex(**fields)中
+            fields      可以设置year,quarter等数组，生成有关时间区间的数组
+                        同时设定频率(必须和feild相适应)，则可以生成时间区间
+
+六、重新采样和频率转换：
+    resample方法类似groupby方法，都需要调用聚合函数或者apply
+    resapmle 可以实现对datetimeIndex和periodIndex的分组计算：
+    
+    pdObj.resapmle(rule, axis,closed,label,convention,kind,loffset,base,on,level,origin,offset)
+        rule                即freq，决定取样的频率
+        axis                采样的方向，默认0
+        closed              'right'/'left', 向下取样时，左右取等 默认'left'
+        label               'right'/'left', 向下取样时，用左右表示结果，默认'left'
+        convention          'start'/'end',  只能用在period中，
+                                            向上取样时，默认start，表示新短区间数组应该从长旧区间的位置开始
+                                             例：annual_frame.resapmle('Q-DEC',convention='end')     此时表示Q-DEC从当年的最后一个，即Q4开始
+                                                 annual_frame.resapmle('Q-DEC')                      此时表示Q-DEC从当年的第一个，即Q1开始
+        kind                'period'/'Timestamp'    index对象的类型,默认本身
+        offset              对箱标签进行时间校准，即对划分进行偏置调整
+        loffset             [1.5以后不存在],必须在resample之后更改(如shift方法)，（resample对象中的元素时tuple）
+
+    将频率从短区间（高频率） ---> 长区间 (低频率) 称为向下取样：
+        向下取样时需要注意的对于两端端点是否包含的判断：
+            具体通过closed和label处理，
+        对于向下取样，本质上类似groupby：
+            PS：除了能使用聚合函数,agg,apply还能使用与decribe方法类似的ohlc() ------ 表明在分组中的open,highest,lowest,close的数值
+    
+    将频率从长区间（低频率） ---> 短区间（高频率）称为向上取样：
+        向上取样时需要注意的是插入对应的值：
+            具体通过asfreq()，ffill()，bfill()处理：
+                PS：这里的asfreq()是resampler的方法，不是前面的pdObj方法
+                resapmlerObj.asfreq(fill_value)             填充值
+                resapmlerObj.ffill(limit)/bfill(limit)      向前/向后填充
+        对于向上取样，本质上类似于groupby, 但是会出现emptyFrame：
+            最大的功能就是实现频率的转换（<<<----和pdObj.asfreq最大的不同是可以改变行数
+        
+        对于区间的向上采样： 
+            通过resamplpe的convention参数表示开始的位置是在长区间（旧区间）的位置:'start'/'end'
+            对于季度的问题，如果将季度错位，会多出来
+
+七、移动窗口函数：
+    统计出图可以通过移动窗口函数实现噪声和粗糙数据的平滑化
+    在计算上：
+        移动窗口函数的本质上和groupby类似
+    不同的是：
+        不同的是groupby是将index直接划分，而移动窗口rolling是将窗口一点一点移动，生成多次的区间，
+                            直接划分             窗口移动
+                            groupby             rolling(2)
+                                                 Nan  
+                1              1                  1  1
+                2                2                   2   2
+                3                  3                     3   3   
+                4                    4                       4   4
+                5                       5                        5
+        比如通过移动窗口，分别求一段时间（窗口）中的数值的平均值，就能很好地提高曲线的平滑度
+    pdObj.rolling(window,min_periods,center,on,axis, closed, step,method,*,win_type)
+        window          表示窗口的大小；可以是一个int或者是一个offset：
+                            如果是一个int，表示一个窗口中数据的多少，默认右对齐时，前面的值会有Nan(如上图)
+                            如果是一个offset，就不会有这样的问题，统计的是这个时间段内的值
+        min_periods     表示一个窗口之中至少有几个(非Nan)数据点，如果不达标，就会返回Nan
+        center          bool值，对齐设置为中心，默认右对齐（见上图）
+        on              表示基于哪一列进行移动窗口，默认是None，即index
+        step            表示window一次移动多少，默认一次移动一个数据点step=1
+        method          默认single表示对每一列进行，也可以选择table         （暂时不知道，之后再补充）
+        win_type        默认是None，表示平权，可以是一个str，但必须是专有函数的str（一般不设置）
+
+    除此之外，还有拓展窗口，即窗口是左边不动，右边不断向右扩展的：
+        pdObj.expanding(min_periods,axis,method)
+
+    1.指数加权函数：
+        指数加权平均的本质是 使得较近的数据能够对预测结果起到更大的作用
+            vt = （β-1）vt + β θt           其中β一般取值在0.9左右，这样反复嵌套就能实现前面数据的影响指数级下降
+        可以通过pdObj.ewm()实现：
+            有以下的参数可以实现β的设定：
+                com             质心指定衰减 beta=1/(1+com)
+                span            范围指定衰减 beta=2/(1+span)
+                halflife        半衰期指定衰减 beta=1/exp(log(0.5)/halflife)
+                alpha           直接指定beta = alpha
+
+    2.二元移动窗口函数：
+        类似前面的一元函数，
+        只不过是使用的 聚合函数 或者是 apply的函数 参数中可以引入其他的变量元
+            如计算相关性等情况
+        
+

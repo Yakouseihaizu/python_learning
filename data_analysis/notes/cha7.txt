@@ -1,0 +1,168 @@
+一、处理缺失值：
+    缺失值包括pd.nan,None(Python)等等
+    1.过滤缺失值：
+        pdObj.dropna(axis,how,thresh,subset,inplace)
+            过滤pdObj的Nan数据
+            axis:       轴：        默认是0/'index'；可以是1/'columns'
+            how:        筛选方式：  默认是'any'：表示该行/列中只要有一个空值删除
+                                         'all':表示该行/列中全部是空值，才删除
+            thresh:     非零元素的最低数量：    默认是None，如果pdObj中的非空元素小于thresh，则删除
+            subset:     子集：      根据axis的选择，按子集中的值是否是Nan进行筛选
+            inplace:    是否替代原来的pdObj
+    
+    2.补全缺失值：
+        pdObj.fillna(value,method,axis,inplace,limit)
+            将pdObj的缺失值替换成对应的value值：
+                axis:       需要填充的轴，默认是0
+                inplace:    是否替代原来的pdObj
+                value:      如果是一个标量，则全部替换
+                            如果是一个字典，其key是pdObj的index或columns，则使用对应的value填充对应行/列的Nan
+                method:     插值方法，类似于reindex中的method
+                                        默认是ffill，表示按照前面的值进行填充
+                                              bfill, 表示按照后面的值进行填充
+                                              pad,   表示按照最近的值进行填充
+                limit:      向前或者向后填充时最大的填充范围
+    
+二、数据转换：
+    1,删除重复值（只能处理行重复）：
+        pdObj.duplicated(subset,keep) ------------- 返回boolSeries。判断是否重复行。
+                                                    subset类似前面,
+                                                    keep默认first，表示第一个出现的元素，可以用last，最后一个出现的元素
+        pdObj.drop_duplicates(subset,keep,inplace,ignore_index):
+            返回DataFrame对象，删除其中的重复值
+            subset、keep、inplace、ignore_index 都类似前面
+
+    2.使用函数或映射进行数据转换：
+        可以通过函数进行转换：
+            map(f)或者apply(f)将pdObj中的数据转换为对应的数据
+            当然使用匿名lambda函数也可以
+        可以通过映射进行转换：
+            可以直接使用一个字典，将字典应用到map中即可，map(f)，不能使用apply
+    
+    3.代替值：
+        pdObj.replace(to_place,value,inplace,limit) --------------- 将to_place的值转换为value
+                                                                    to_place和value 都是列表，则一一对应的替换
+                                                                    若to_replace是字典则将key替代为value
+        
+    4.重命名轴索引：
+        重命名不同于reindex，重命名主要是改变index或columns，不改变value，但是reindex会按数据进行填充或缺失
+        1.可以直接用
+            pdObj.index = newindex ---------------------------- 给index赋值，可以直接重命名
+            pdObj.columns = newcolummns ----------------------- 给columns赋值，可以直接重命名
+        2.可以使用rename方法：
+            pdObj.rename(index,columns,inplace) --------------- index和columns可以是函数或者是映射，将对应的值替换
+    
+    5.离散化和分箱：
+        连续值进行离散化，可以把它们分离成 ‘箱子’(即区间) 进行分析。
+        可以通过以下的函数实现：
+            pd.cut(x,bins,right=True,labels,precision,ordered,include_lowest,duplicates,rebins):
+                返回一个Categorical对象，具有一个列表，还有Length，Categories属性
+                x:              自己的连续值
+                bins:           划分。如果bins是一个整数，则将x进行等分划分，不在划分中的值返回Nan
+                                     如果是一个列表，则将x将列表中的数值作为节点进行划分
+                                     如果是一个IntervalIndex，则将其中的tuple作为划分
+                right:          是否左开右闭，Fasle是左闭右开
+                labels:         将划分命名，如list等
+                precision:      区间节点的十进制精度
+                ordered:        是否有序，无序的情况下必须要有labels
+                include_lowest: 是否包括最左边的值
+                duplicates:     x中如果有重复值，若是raise则会报错，若是drop则会自动删除
+                rebins:         是否返回bins
+            pd.qcut(x,q,labels,precision,duplicates):
+                返回一个Categorical对象,是按照分位数进行划分
+                q:              分位数划分。    
+                                如果是一个整数，则直接均分
+                                如果是一个列表，则节点为对应value的分位数，用分位数进行划分
+    
+    6.检查和过滤异常值：
+        可以使用boolDataFrame进行筛选。
+        还可以使用通用函数等方法进行筛选，如abs(),sign()等等
+    
+    7.置换和随机抽样：
+        置换：对于整数数组，可以使用
+            pdObj.take(indices,axis=0,is_copy=False) ----------------- 按照indices的元素选取pdObj中的元素，类似于神奇索引
+        随机抽样：
+            pdObj.sample(n,frac,replace,wights,random_states,axis) --- 在pdObj中随机抽取样本
+                n:              表示抽出样本的样本量
+                frac:           表示抽出样本量所在总体的比例
+                replace:        是否允许重复抽样,默认是False，当n>总体数量/frac>1，是必须是True
+                wights:         表示抽样的权重，即抽中的概率
+                                如果是一个str，则会按照对应行/列的数据，分别按比例进行权重分配
+                                如果是一个Series，则会按照Series的Value，按照比例抽取index对应的行/列
+                random_states:  复现自己的抽样，当random_states(int)相同，则抽出来的一样
+    
+    8.计算指标/虚拟变量：
+        pd.get_dummies(data,prefix,prefix_sep,dummy_na,columns,
+                       sparse,drop_first,dtype)
+            返回data对应的元素矩阵，默认是bool
+            prefix:         给dummy的columns的前缀
+            prefix_sep:     给dummy的columns的前缀后连接符
+            dummy_na:       是否专门生成一列na的数据
+            sparse:         是否返回Sparse，默认False ---> np.array，True ---> SparseArray
+            drop_first:     是否去掉第一个数据
+        可以通过离散化 cut 或 qcut 函数和 get_dummies 函数一起使用，使得可以更好的展示离散情况
+
+三、字符串操作：
+    1.字符串对象方法：
+        count(x,start,end) ---------------------------- 返回子字符串在strObj中从start（含）到end（不含）中非重叠出现的次数
+        endswith(x,start,end) ------------------------- 如果strObj中start（含）到end（不含）之间的部分，以后缀x结尾返回True
+        startswith(x,start,end) ----------------------- 如果strObj中start（含）到end（不含）之间的部分，以后缀x结尾返回True
+        join(iterable) -------------------------------- 在迭代器元素之间插入对应的strObj形成新的字符串
+        index(x,start,end) ---------------------------- 如果在strObj中找到，返回字符串中第一个出现的字符串的位置，如果是长的字符串就对应开头的字符；
+                                                        如果找不到，就有Error
+        find(x,start,end) ----------------------------- 同上，但是如果找不到，返回-1
+        rfind(x,start,end) ---------------------------- 同上，但是找的是最后一个出现的子字符串的位置
+        replace(old,new,count) ------------------------ 在strObj中的old替代为new，count表示替代次数，默认是-1（全部替换）
+        strip/rstrip/lstrip(char) --------------------- 将两边/右边/左边的char去掉，默认是空格
+        split(sep,maxsplite) -------------------------- 使用sep将strObj拆分，从前往后最多分maxsplite份，默认-1
+        lower/upper/title() --------------------------- 将大写字母转换为小写/大写/或单词首字母大写
+        casefold/capitalize() ------------------------- 同上，不止限于英文字母
+        ljust/rjust(width,fill) ----------------------- 左对齐或者由右对齐，用fill填充字符串的空间，默认是空格
+    
+    2.正则表达式方法：  （使用re的函数也类似）
+        findall(string,pos,endpos) -------------------- 将字符串所有非重叠匹配以list的形式返回。pos表示开始位置，endpos表示结束位置
+        finditer(string,pos,endpos) ------------------- 同上，不过返回的是迭代器
+        match(string,pos,endpos) ---------------------- 从字符串pos位置开始匹配，返回Match对象，见autopy。匹配失败返回None
+        search(string,pos,endpos) --------------------- 同上，但是是会向后寻找到能匹配的位置再开始匹配
+        splite(string,maxsplite) ---------------------- 同前面的splite，不过是正则匹配的地方进行拆分
+        sub,subn(repl,string,count,flags) ------------- 将string中的匹配值替代为repl，count同上，
+                                                        subn返回一个tuple，第二个值是替换的次数
+
+    3.向量化字符串函数：
+        Series.str ----------------------------------- 向量化字符串
+
+        cat(others,sep,na_rep,join) ------------------- 使用sep按元素将others和strObj连接，返回对应的Series
+                                                        join表示连接方式，主要影响index：
+                                                            'left'  :按strObj对齐
+                                                            'right' :按others对齐
+                                                            'inner' :按交集对齐
+                                                            'outer' :按并集对齐
+        contains(pat,flags) --------------------------- 返回是否含有某个模式/正则表达式的布尔数组
+        count(pat,flags) ------------------------------ 模式出现次数的计数
+        extract(pat,flags,expand) --------------------- 使用正则表达式，从字符串Series中分组抽取，返回以分组序号为columns的DataFrame
+        endswith(pat,na) ------------------------------ 向量化使用方法endswith()，nan表示缺失值的替代，和正则无关
+        startwith(pat,na) ----------------------------- 向量化使用方法startswith()，nan表示缺失值的替代，和正则无关
+        findall(pat,flags) ---------------------------- 找出字符串中所有的模式/正则表达式匹配项，以列表形式返回
+        get(int) -------------------------------------- 获得每个字符串的第int个元素
+        isalnum()/isalpha()/isdigit()/isdecimal()
+            isnumeric()/islower()/isupper() ----------- 判断是数字和英文字母/英文字母/
+                                                        数字，只要是阿拉伯数字就返回true，否则返回False/
+                                                        数字，除了byte字符串之外的阿拉伯数字返回true，否则返回True，若是byte则引起Error/
+                                                        数字，包括中文和阿拉伯数字，返回true，否则返回False，byte引起ERROR
+                                                        /全部小写/全部大写
+        join(sep) ------------------------------------- 如果Series的values中的由string组成的list，则返回对应的合并字符串
+                                                        如果不符前面的string的list，就是Nan
+        len() ----------------------------------------- 每个字符串的长度
+        lower()/upper()/title() ----------------------- 将每个字符串转换为小写/大写模式
+        match(pat,case,flags,na) ---------------------- 返回一个boolSeries，将re.match的匹配方式作用于每个元素
+        pad(width,side,fillchar) ---------------------- 在side方向上填充fillchar，使得长度为width，默认是空格
+        center(width,fillchar) ------------------------ 同上，只不过side选择为'both'
+        repeat(int) ----------------------------------- 对每个元素乘以int
+        replace(pat,repl,n,case,flags,regex) ---------- 将pat匹配内容替换为repl,
+                                                        n：     替换n次，默认全部替换
+                                                        case:   是否在意大小写
+                                                        regex:  匹配pat的时候是否按照正则匹配
+        slice(start,stop,step) ------------------------ 对Series中的每个字符串 从start(含)到stop(不含)每step进行切片组成新的祖父穿
+        splite(pat,n,expand,regex) -------------------- 在pat的匹配位置进行拆分，拆n次(0次认为是全部)
+                                                        expand: 是否扩展为DataFrame
+        rstrip()/lstrip()/strip() --------------------- 清除左/右/两边的空格

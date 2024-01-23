@@ -1,0 +1,435 @@
+一、pandas数据结构介绍：
+    1.Series
+        一维数组型对象，包含了一个值序列，并包含了数据标签，称为索引 index
+            Series(data,index,dtype,name,copy) ------------------------- 生成一个Series序列
+            In []:  obj = pd.Series([4,7,-5,3])
+            In []:  obj
+            Out[]:  
+            0    4
+            1    7
+            2   -5
+            3    3
+            dtype:  int64
+
+        左边是index，默认生成的索引是从0~N-1（N是数据的长度）
+        
+        Series对象的值和索引：
+            SeriesObj.values -------------------------------------- 属性，返回对象的值组成的数组
+            SeriesObj.index --------------------------------------- 属性，返回对象的索引组成的数组
+
+            In []:  Obj.values
+            Out[]:  array([4, 7, -5, 3])
+            In []:  Obj.index
+            Out[]:  Ranfindex(start=0, stop=4, step=1)
+
+        也可以自己创建一个索引序列，用标签标识每个数据点
+            In []:  obj = pd.Series([4, 7, -5, 3],index=['d','b','a','c'])
+            Out[]:  
+            d    4
+            b    7
+            a   -5
+            c    3
+            dtype:  int64
+
+            In []:  obj.index
+            Out[]:  Index(['d','b','a','c'], dtype='object')
+
+        与numpy相似，可以通过标签进行索引，也可以类似list用默认的数字索引
+            In []:  Obj2['a']
+            Out[]:  -5
+            In []:  obj2['d'] = 6                # 对切边进行操作
+            In []:  obj2[['c','a','d']]          # 类似一维数组的神奇索引
+            Out[]:  
+            c    3
+            a   -5
+            d    4
+            dtype: int64
+            In []:  obj2[obj2>0]                  # 也可以使用bool数组进行筛选
+            Out[]:  
+            d    4
+            b    6
+            c    3
+            dtype: int64
+            In []:  obj2 *2                       # 与numpy中的array相似
+            Out[]:  
+            d     8
+            b    12
+            a   -10
+            c     6
+            dtype: int64
+            In []:  np.exp(obj2)                  # 通用函数也一样
+            Out[]:  
+            d     54.598150
+            b    403.428793
+            a      0.006738
+            c     20.085537
+            dtype: float64
+
+
+            In []: 'a' in obj2                    # 类似字典，默认代表keys，同样Series也具有keys()方法和values属性可以判断
+            Out[]:  True
+
+            In []:  pd.isnull(Series)              # 判断是否有Nan，返回一个对应的bool数组
+                    pd.notnull(Series)             # 上面数组的取反
+            Out[]:  略
+
+        如果引入的index中没有对应的对应的数值，则会对应Nan
+            In []:  sdata = {'Ohio':35000,'Texas':71000,'Oregon':16000,'Utah':5000}
+            In []:  obj3 = pd.Series(sdata)       # 生成索引是按照 自己设置的顺序 排序好的数组
+            In []:  obj3
+            Out[]:  
+            Ohio      35000
+            Texas     71000
+            Oregon    16000
+            Utah       5000
+            dtype: int64
+
+            In []:  states = ['California','Ohio','Oregon','Texas']
+            In []:  obj4 = pd.Series(sdata, index=states)
+
+            In []:  obj3
+            Out[]:  
+            Ohio      35000
+            Texas     71000
+            Oregon    16000
+            Utah       5000
+            dtype: int64
+
+            In []:  obj4                          # index中有sdata中所没有的内容会返回Nan
+            Out[]:  
+            California        NaN
+            Ohio          35000.0
+            Oregon        16000.0
+            Texas         71000.0
+            dtype: float64
+
+            In []: obj3 + obj4                    # 内容会叠加，会自动对齐，如果不是两个数组都有的内容就会由Nan
+            Out[]:  
+            California         NaN
+            Ohio           70000.0
+            Oregon         32000.0
+            Texas         142000.0
+            Utah               NaN
+            dtype: float64
+
+        Series的name属性 和 Series.index的name属性：
+            In []:  obj4.name = 'population'
+            In []:  obj4
+            Out[]:  
+            California        NaN
+            Ohio           1000.0
+            Oregon        16000.0
+            Texas         71000.0
+            Name: population, dtype: float64
+
+            In []:  obj4.index.name = 'states'
+            In []:  obj4
+            Out[]:  
+            states
+            California        NaN
+            Ohio           1000.0
+            Oregon        16000.0
+            Texas         71000.0
+            Name: population, dtype: float64
+    2.DataFrame
+        DataFrame 表示矩阵的数据表，每一列可以是不同的值类型
+        DataFrame 具有行索引和列索引 ----------------------- 类似于共享相同索引的Series的字典
+
+        DataFrame 对象的创建：
+            pd.DataFrame(data,index,columns,dtype,copy) ------------------------ 创建以data为value，以index为行索引的
+                                                                                           以columns为列索引和顺序的，一个DataFrame对象
+        方法一：可以通过利用包含等长度的列表或Numpy数组的字典来形成DataFrame
+                In []:  data = {'states':['Ohio','Ohio','Ohio','Nevada','Nevada','Nevada'],
+                                'year':[2000,2001,2002,2001,2002,2003],
+                                'pop':[1.5,1.7,3.6,2.4,2.9,3.2]}
+                        frame = DataFrame(data)
+                In []:  frame
+                Out[]:  
+                    states	year	pop
+                0	Ohio	2000	1.5
+                1	Ohio	2001	1.7
+                2	Ohio	2002	3.6
+                3	Nevada	2001	2.4
+                4	Nevada	2002	2.9
+                5	Nevada	2003	3.2
+            
+            其中，会自动地将字典的键看作columns，并生成默认的从0到N-1的行索引
+                对于较长的DataFrame可以使用
+                    DataFrameObj.head(n=5) ----------------------------------- 返回前n行的视图
+                
+            如果在创建DataFrame时，对columns使用了自己的内容，应该保证长度一致，生成的DataFrame的columns会按照人工设计的索引排序
+            如果columns中有原来字典键中没有出现的内容，就是在对应位置生成一列Nan        
+
+            如果自己传的index的长度与数据中的长度不一致，则会报错。
+        方法二：可以使用嵌套字典来形成DataFrame
+            此时会使用字典的键作为自己的columns（和前面一样），使用字典内部的键合并作为index
+            没有对应index的地方，会产生Nan
+                In []:  pop = {'Nevada':{2001:2.4,2002:2.9},
+                               'Ohio':{2000:1.5,2001:1.7,2002:3.6}}
+                In []:  frame3 = pd.DataFrame(pop)
+                In []:  frame3
+                Out[]:  
+            	    Nevada	Ohio
+                2001	2.4	1.7
+                2002	2.9	3.6
+                2000	NaN	1.5
+        除此之外，DataFrame还可以接受以下的有效输出：
+            2Dndarray --------------------------------------- 数据的矩阵，行和列都是可选的参数
+            数组、列表和元组组成的字典 ------------------------ 同方法一
+            NumPy结构化/记录化数组 --------------------------- 和数组组成的字典一致
+            Series组成的字典 --------------------------------- 每个Series组成单独的一列，它们的index联合起来组成DataFrame的index，没有的地方是Nan
+            字典组成的字典 ----------------------------------- 同方法二
+            字典或Series组成的字典 --------------------------- 相当于前面的两个加起来，key作为index，value作为data
+            列表或者元组组成的列表 ---------------------------- 同2Dndarray
+            其他Dataframe或者其切片 -------------------------- 没有特别指定使用原来的index和columns
+            Numpy MaskedArray ------------------------------- 同2dndarray，隐藏值会作为Nan
+
+        DataFrame对象有关的属性和方法：
+            DataFrameObj.head(n=5) ----------------------------------- 返回前n行的视图
+            DataFrameObj.columns ------------------------------------- DataFrame对象的列索引
+            DataFrameObj.index --------------------------------------- DataFrame对象的行索引
+            DataFrameObj[column] ------------------------------------- DataFrame指定列组成的Series
+            DataFrameObj.column -------------------------------------- 同上，不过必须是存在的列，因此不能用于创建新的列
+            DataFrameObj.loc(index) ---------------------------------- index对应的行组成的Series
+            DataFrameObj.T ------------------------------------------- 将DataFrame转置
+            DataFrameObj.value --------------------------------------- 返回DataFrame对应的2dndarray
+            
+            DataFrameObj添加列的操作：
+                DataFrameObj['newcol'] = array/Series
+                    PS：不能使用DataFrameObj.column
+                        Array的长度必须一致，Series可以实现对部分的行赋值，而对于其他的赋Nan
+            删除列的操作：
+                del DataFrameObj['col']
+    3.Index：
+        用于储存标签或者其他元数据，如轴名等
+        Index对象是不可变的，无法修改索引对象，因此共享同一个Index对象较为安全
+        使用已经生成的Index对象作为参数的Series或者DataFrame对象中的index或columns就是Index对象本身，而不是copy
+        因此可以说共享是安全的
+            In []:  lables = pd.Index(np.arange(3))
+            In []:  lables
+            Out[]:  Index([0, 1, 2], dtype='int32')
+            In []:  obj2 = pd.Series([1.2,-2.5,0],index=lables)
+            In []:  obj2
+            Out[]:  
+            0    1.2
+            1   -2.5
+            2    0.0
+            dtype: float64
+            In []:  obj2.index is lables
+            Out[]:  True
+
+        Index对象的创建：
+            可以通过Series，DataFrame对象生成
+                SeriesObj.index
+                DataFrameObj.index
+                DataFrameObj.columns等
+            还可以直接生成
+                pd.Index(data,dtype,copy,name) ----------------------- 生成对应的Index对象
+        
+        Index对象的操作和方法：
+            Index类似一个数组，可以参考数组的方法
+            Index还能作为一个包含可重复元素的集合，可以用关键字in判断元素是否包含其中
+
+            Index对象的方法：
+                Index1.append(Index2) --------------------------------- 将index1之后添加上index2（可重复）
+                Index1.difference(Index2) ----------------------------- index1中删除index2中含有的元素（重复删除）
+                Index1.intersection(Index2) --------------------------- 两个Index的交集,（不重复）
+                Index1.union(Index2) ---------------------------------- 两个Index的并集，（同一元素的最大的重复）
+                Index1.isin(Index2) ----------------------------------- 检出Index1中每一个值是否在Index2中
+                Index1.delete(int) ------------------------------------ 将int位置的元素从Index1中删除
+                Index1.drop(value) ------------------------------------ 将value对应的元素从Index中删除
+                Index1.insert(int,value) ------------------------------ 在int位置插入value值
+                Index1.is_monotonic_decreasing/
+                Index1.is_monotonic_increasing ------------------------ 判断Index1是否是单增或者单减
+                Index1.is_unique -------------------------------------- 判断其元素是否都是单独出现的
+                Index1.unique() --------------------------------------- 返回单个出现的元素组成的Index对象
+
+二、基本功能：
+    1.reindex：
+        reindex(index, method, copy, level, fill_value:, limit, tolerance)
+        重建indexs之后，对于在原来没有的index，会产生Nan
+        关键词：
+            index ------------------------------------------- 新建索引的序列，索引使用时无需复制
+            method ------------------------------------------ 插值方法：ffill按前填充，bfill按后填充
+            fill_value -------------------------------------- 出现Nan的情况下填充的值
+            limit ------------------------------------------- 填充时，填充的最大尺寸间隙
+            tolerance --------------------------------------- 填充时，所需填充的不精确匹配下的最大尺寸间隙
+            level ------------------------------------------- 匹配MultiIdex级别的简单索引；否则选择子集
+            copy -------------------------------------------- 如果是True，复制底层数据
+                                                              如果是False，索引相同时不要复制
+        对DataFrame和Series，可以用
+            SeriesObj.reindex()
+            DataFrameObj.reindex() -------------------------- 对于index（行）进行重新排序
+            DataFrameObj.reindex(columns=coldata) ----------- 对于columns（列）进行重新排序
+    2.drop：
+        对Series：
+            drop(index) ----------------------------- 在轴向上删除条目，index可以是单独的值，或者是一个列表
+        对DataFrame:
+            drop(index,axis=0) ---------------------- 在轴向上删除条目，axis=0或axis='index'是index，axis=1或axis='columns'是columns
+        drop还有一个关键词是inplace：     inplace=True表示直接对于原对象进行操作
+                                                False表示返回新的对象
+    3.标签索引和整数索引的关系：
+        对于切片，如果传入的是一个scalar，但是其中有多个值具有相同的索引，这时会返回切片而不降维
+        对Series：
+            obj[lable(s)] ------------------------------------- 返回labels对应的视图，
+                                                                可以是单个的lable，可以是label的列表，可以是values对应的bool值
+                                                                还可以是label的切片
+            obj[int(s)] --------------------------------------- 返回对应的默认的值的视图，
+                                                                可以是单个的数字，列表，或者切片
+                PS：*****使用labels的切片是包括切片最后的，使用int是则不会*****        
+        对DataFrame：
+            使用单个值或者序列，可以从DataFrame中索引处一个或者多个列
+            DataFrame[lable(s)] ------------------------------- 类似前面的Series，对columns进行选择
+            DataFrame[int(s)] --------------------------------- 对index行进行选择，类似2dndarray
+            DataFrame[1d_boolArray] --------------------------- 筛选index，类似2dndarray
+                                                                二维的boolArray直接对values进行筛选
+        loc和iloc：
+            这两种方法都十分类似与NumPy的方法
+            都是从values的结构开始处理，（从行开始）
+
+            loc[1lable(s),2label(s)...] ----------------------- 通过标签索引，按照Numpy的方式逐层选择
+            iloc[1int(s),2int(s),...] ------------------------- 通过整数索引，按照Numpy的方式逐层选择
+
+            对于只要求取一个值的问题，可以使用
+            at[lable1,lable2] --------------------------------- 返回对应位置的value
+            iat[int1,int2] ------------------------------------ 返回对应位置的value
+    4.算术和数据对齐：
+        对于Series对象：
+            Series1 +-*/ Series2 ------------------------------ 将索引自动对齐并进行运算
+                                                                对于没有交叠的标签位置，产生Nan
+        对于DataFrame对象：
+            DataFrame1 +-*/ DataFrame2 ------------------------ 行列都会变成两个的并集，
+                                                                对于其中一个没有交叠的标签位置，产生Nan
+            使用填充值得算术方法：
+                DataFrame1 +-*/ DataFrame2 -------------------- 这样的话会得到Nan
+                可以使用算数方法(类似通用函数)：
+                    add/radd ---------------------------------- 同+
+                    sub/rsub ---------------------------------- 同-
+                    mul/rmul ---------------------------------- 同*
+                    div/rdiv ---------------------------------- 同/
+                    floordiv/rfloordiv ------------------------ 同//
+                    pow/rpow ---------------------------------- 同**
+
+                    在以上方法中参数中可以使用关键词 fill_value 设置出现Nan的情况下填充对应的值
+    5.DataFrame和Series间的操作：
+        类似数组的广播机制。
+        对于index的情况下：
+            DataFrameObj +-*/ SeriesObj --------------------------- 将Series的index和DataFrame的columns进行匹配，并广播到各行
+                                                                    如果Series的index不在columns中，会求并集重组columns，新建的列填充为Nan，其他正常
+        对于columns的情况下：
+            必须使用算数方法，并设置axis参数，表示对其的部分是index，而不是columns
+    6.函数应用和映射：
+        Numpy的通用函数也可以使用在pandas对象上：
+            包括一元通用函数和二元通用函数
+        
+        除此之外，还可以使用DataFrame的apply方法，将函数应用到一行或一列的一维数组上。
+            DataFrameObj.apply(f,axis='index') ---------------------------- 将f作为应用的函数，默认将每一列调用一次
+                                                                            如果axis = 1或者axis = 'columns'的情况下，对每一行调用一次
+                                                                            即axis表示串起来的方向
+            除此之外，还有常用的数组统计方法（如：sum和mean，cumsum和cumprod等）都是DataFrame的固有方法
+            默认axis=0，同上
+
+        对于逐元素的Python函数也可以使用。当然也可以使用
+            DataFrameObj.applymap(f) --------------------------------------- DataFrame中逐元素都应用f函数
+            SeriesObj.map(f) ----------------------------------------------- Series中逐元素应用f函数
+    7.排序和排名：
+        对于Series对象：
+            SeriesObj.sort_index(ascending=True) -------------------------- 按照index进行排序，
+                                                                            其中ascending表示是否按照升序排序
+                                                        
+            SeriesObj.sort_values(ascending=True) ------------------------- 按照value进行排序
+                                                                            其中ascending表示是否按照升序排序
+            SeriesObj.rank(method='average) ------------------------------- 通过method方法进行排名，返回对应index和排名组成的Series
+        对于DataFrame对象：
+            DataFrameObj.sort_index(axis=0,ascending=True) ---------------- 沿着axis按照index进行排序,axis的选择同上面的应用函数
+                                                                            其中ascending表示是否按照升序排序
+            DataFrameObj.sort_values(by,axis=0,ascending=True) ------------ 沿着axis进行values进行排序，axis的选择同上面的应用函数
+                                                                            其中ascending表示是否按照升序排序
+            DataFrameObj.rank(axis=0,method='average') -------------------- 沿着axis，通过method方法进行排名，返回对应index和排名组成的Series
+
+        rank方法中的method（处理平级关系）：
+            'average' ------------------------------------------------------ 默认，每个组中分配平均排名
+            'min' ---------------------------------------------------------- 对整个组使用最小排名
+            'max' ---------------------------------------------------------- 对整个组使用最大排名
+            'first' -------------------------------------------------------- 按照值在数组中的次序分配排名
+            'dense' -------------------------------------------------------- 类似于method = 'min'，但之后的的排序是+1，而不是由相同对象的数量决定的
+    8.含有重复标签的轴索引：
+        对于Series对象：
+            SeriesObj.index.is_unique --------------------------------- 判断其元素是否都是单独出现的
+            对于重复出现的元素的index1:
+                SeriesObj[index1] ------------------------------------- 返回一个子Series对象，其index全部都是index1
+            对于单独出现的元素的index2:
+                SeriesObj[index2] ------------------------------------- 返回对应的默认的值
+        对于DataFrame对象：
+            DataFrameObj.index/columns.is_unique ---------------------- 判断其元素是否都是单独出现的
+            对于重复出现的index1或者column1：
+                DataFrameObj[column1]/DataFrame.loc[index1] ----------- 返回一个子DataFrame对象，其columns或者是index都是对应的值
+            对于单独出现的index2或者column2：
+                DataFrameObj[column1]/DataFrame.loc[index1] ----------- 返回对应的Series对象
+    9.合并DataFrame:
+        pd.conact(objs,axis,ignore_index) ------------------------- 将objs中的DataFrame元素合并，
+                                                                    axis默认0，会沿着index合并，设置为1后可以按着columns合并
+                                                                    ignore_index默认为False，设置为True之后，会重新默认整数index                                                        
+
+三、描述性统计的概述与计算：
+    1.常用方法：
+        pandas对象装配了常用的数学、统计方法的集合。
+            DataFrameObj.方法(axis,skipnan=True,level) ------------------------ 按照方法进行常用的统计学的方法
+                                                                                axis    归约轴，0为行向，1为列向，默认是0
+                                                                                skipnan 排除缺失值，默认为True
+                                                                                level   如果是多层次索引的，该参数可以所见分组层级
+        常用的方法包括以下：
+            count ---------------------------------------- 非Nan的元素个数
+            describe ------------------------------------- 计算Series或DataFrame各列的统计集合
+            min/max -------------------------------------- 计算最小值/最大值
+            argmin/argmax -------------------------------- 计算最小值/最大值所在的位置（整数）
+            idxmin/idxmax -------------------------------- 计算最小值/最大值所在的标签
+            quantile ------------------------------------- 计算样本的从0到1间的分位数
+            sum ------------------------------------------ 加和
+            mean ----------------------------------------- 均值
+            median --------------------------------------- 中位数（50%分位数）
+            prod ----------------------------------------- 所有值的积
+            var ------------------------------------------ 值的样本方差
+            std ------------------------------------------ 值得样本标准差
+            skew ----------------------------------------- 样本偏度值(判断偏离对称中心程度)
+            kurt ----------------------------------------- 样本峰度值(判断曲线峰的尖锐程度) 见https://blog.csdn.net/xbmatrix/article/details/69360167
+            cumsum --------------------------------------- 累计值
+            cummin/cummax -------------------------------- 累计值的最小值或最大值
+            cumprod -------------------------------------- 值得累计积
+            diff ----------------------------------------- 计算前后两个值的差
+            pct_change ----------------------------------- 计算前后两个值的差与前面的百分比
+    2.相关性和协方差：
+        对于Series对象：
+            SeriesObj1.corr(SeriesObj2,
+                            method='pearson',
+                            min_periods) ---------------------------------- 计算两个变量之间的相关系数，其index会自动对其比较
+                                                                            如果存在不重叠的情况，会自动排除
+            SeriesObj1.cov(SeriesObj2,ddof=1,min_periods...) -------------- 计算两个变量之间的协方差，其index会自动对齐
+                                                                            出现不重叠的情况，会自动忽略
+        对于DataFrame对象：
+            DataFrame.corr(method='pearson',min_periods) ------------------- 返回一个DataFrame矩阵，计算任意列之间的相关系数
+            DataFrame.corrwith(others,axis=0,method='pearson',) ------------ others可以是一个Series或者是一个DataFrame，
+                                                                             当others为Series时，返回每一个列(axis=0)/行(axis=1)变量对应的相关系数Series,
+                                                                             当others为DataFrame是，返回一个两个DataFrame对应行/列变量的相关系数的Series
+            DataFrame.cov(method='pearson',ddof=1,min_periods...) ---------- 返回一个DataFrame矩阵，计算任意列之间的协方差
+            
+        method参数：
+            'pearson' -------------------------------- 皮尔森相关系数，表示是否线性
+            'spearman' ------------------------------- 斯皮尔曼相关系数，表示是否单调
+            'kendall' -------------------------------- kendall相关系数，表示是否单调，但是更加保守
+    3.唯一值、计数和成员属性：
+        对于Series对象：
+            SeriesObj.unique() ------------------------------------- 返回一个数组，包含Series的value中的唯一值
+            SeriesObj.value_counts() ------------------------------- 返回一个Series，将唯一值作为index，将出现次数作为value
+            pd.value_counts(Series,sort=True,ascending=False
+                            dropna=True) --------------------------- 返回一个Series，将唯一值作为index，将出现次数作为value
+                                                                     sort       按照出现次序(True)，还是按照value排序(False)
+                                                                     ascending  是否升序
+                                                                     dropna     是否自动排除Nan
+            Series.isin(array) ------------------------------------- 返回一个bool的Series对象，逐个判断Series中的值是否出现在array中
+        对于Index对象：
+            IndexObj.get_indexer(Series) --------------------------- 返回Index中的value出现在Series值中的整数位置，
+                                                                     Index的中value要求是是Series的value
+        对于DataFrame对象：
+            可以使用apply方法应用对Series的方法
+            df.fillna(value, *,method,axis,limit,downcast,inplace) -- DataFrame中的填充Nan的方法

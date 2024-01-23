@@ -1,0 +1,83 @@
+一、pandas和建模代码的结合：
+    pandas -------------------------- 进行数据清洗
+    其他分析库 ----------------------- 进行分析
+    
+    他们的结合点是Numpy数组，有些可以将pdObj直接进行操作
+        转换成Numpy数组的情况下，如果有类型不一样的情况，dtype=objct
+        使用虚拟变量可以将不是数字(int,float)的数据，转换成数字：
+            get_dummies() ----> drop() ----> join(dummies) 
+
+二、使用Patsy创建模型描述：
+    最基本的是通过patsy建立数据矩阵模型，可以进行线性回归等计算
+    patsy.dmatrices(fstr,data,eval_env, NA_action,return_type):
+        fstr:           公式字符串，类似R语言等。其中的变量来自数据集的col(对DataFrame)或者key(对dict)
+        data:           数据集，一般是DataFrame或者是dict
+        eval_env        在找不到变量的时候如何查找，默认0，表示上下文查找，1，表示在解析空间中查找
+        NA_action       对于缺失值的处理，默认是'drop'
+        return_type     返回的数据类型：默认是矩阵'matrix'
+    返回一个元组，第一个是~左边的变量对应的DesignMatrix，
+                 第二个是~右边的变量对应的DesignMatrix，其中默认设定一个截距列（便于矩阵计算）
+    
+    patsy.dmatrix(fstr,data,eval_env, NA_action,return_type):
+        参数和下面一样，只是返回一个矩阵
+    
+    公式字符串：
+        变量        来自dataFrame的col（或dict的key），变量可以进行方法或函数的计算
+        内置函数     包括standardize，center等
+        ~           分隔变量
+        +           表示列的连接
+        除此之外，pasty.builtins中还有内建转化，如  I() ----------- 将其中的参数运算之后再转化(可以算+等)
+                                                  Q() ---------- 添加引号
+    
+    模型计算可以引入外部数据（如建立模型验证中的原始数据）
+        patsy.build_design_matrices(design_infos, data, NA_action, return_type,dtype)
+            design_infos        design_info对象，表示外来数据集中保留的信息应用于新的样本数据上
+            data                新的数据
+        
+    2.分类数据和Patsy:
+        patsy对于非数字的数据会直接转化为dummies
+        在转换成矩阵的过程中，
+            如果选择的是有n个非数字类型的列，则会对其分类，形成n列的矩阵：
+                如果没有指定取消截距： 第一列全部为1，之后的不会列出排序后第一个数据类型的dummies(如对于字符串是按字母排序)
+                如果指定取消截距：    包含所有的类型的n列矩阵
+        如果对于数字类型，可以通过patsy.builtins中的C()函数进行分类处理，结果同上
+
+        对于多个数据变量列的连接：
+            a:b           表示求a,b的交集
+
+三、statsmodels进行模型评估：
+    statsmodels可以进行多种类型的数据模型评估，如线性模型，混合模型等
+    对于最简单的OLS模型：
+        1.api:  
+            线性模型的api包括statsmodels.api和statsmodels.formula.api
+            分别基于数组和表达式进行分析
+                其中基于表达式的分析和Patsy库的语法类似
+        2.基于数组：
+            sm.OLS(endog,exog:,missing,hasconst,**kwargs)
+                endog           因变量
+                exog            自变量
+                missing         处理缺失值方法，默认'none'还有'drop','raise'等
+                hasconst        是否检查常数
+            除此之外，还可以通过add_constant(X)添加截距列
+        3.基于表达式：
+            smf.ols(formula,data,subset,drop_cols,*args,**kwargs)
+                formula         公式字符串，类似R语言等。其中的变量来自数据集的col
+                data            数据集
+                subset          选择计算数据模型所在的子集，（即行的子集）
+                drop_cols       表示在design_matrix中去掉的列数据，  PS：不能式categories的内部列
+                返回一个model对象
+            model对象可以使用fit()方法，得到一个回归结果对象
+                这个对象中包括模型的参数和其他的诊断
+            resultObj.params
+                返回一个array对象，包含拟合的参数
+            resultObj.summary()
+                返回一个完整的诊断细节，是一个DataFrame对象
+            resultObj.predict(data)
+                根据估计的模型参数计算预测值
+                    PS：预测的时候，data中必须有对应自变量名称（只要label一样，因变量不用管）的值
+                
+    除此之外，还有滞后模型(AR)等,生成model,result和predict方法类似
+
+四、scikit-learn库：
+    
+

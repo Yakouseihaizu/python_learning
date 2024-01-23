@@ -1,0 +1,106 @@
+一、分类 category：
+    1.要干嘛？？
+    Category相当于一个维度表，通过code和categories可以实现对于重复数据的有效压缩，提高相率
+        codes:          表示不同分类值出现的顺序，通过0，1，2...组成的数组来实现，相当于密码
+        category：      表示0,1,2...分别对应的值，相当于密码本
+    
+    tips:   在非category的情况下，使用Series可以通过cat.take(codes)的方式实类似的展示功能
+
+    2.Category类型是什么？？
+        Category        是一个独立的类型
+        可以通过astype的方式将Series的值从array转换成Category类型          DataFrame不能
+            Series.astype('category')
+                PS: 此时不改变Series，而是改变它的values
+        除此之外还可以使用from_codes方法生成对应的category对象
+
+        Category有两个属性：codes和categories
+            codes:          是一个array，内容和1中的codes相同
+            categories:     是一个index，内容和1中的category相同
+        
+        
+        Category的大小排序问题：
+            如果没有显式表示，一般认为是无序的（cut形成的区间除外）
+
+    3.如何使用Category进行计算：
+        Categories对象必去其他的非编码版本相比，用法一致。
+            pandas的某些方法中Category的速度和性能更好
+        对于cut或者qcut方法，使用label之后并不会保留区间边界信息。
+        将Categorical对象可以作为groupby()中的by，效率更高
+    
+    4.分类方法：
+        对于包含catgory的value的pdObj对象，具有特殊的属性.cat，通过cat能够实现对于分类方法的访问
+            .cat                    CategoricalAccessor对象，专门为了使用方法而设置
+            以下是两个属性：
+            .cat.codes              与value.codes不同，它是一个有index的Series对象
+            .cat.categories         和value.categories一样
+            以下是主要的方法：
+            .cat.set_categories(new_categories,ordered,rename)
+                new_categories      表示新设定的catergories，
+                                    对于只存在在new_catergories的对象，在原来数据中不体现，但是会改变categories属性
+                                    对于只存在在categories, 新设定使用Nan表示
+                ordered             表示是否有顺序
+                rename              是否将new_categogries作为原来categories的重命名，
+                                    类似rename和reindex的区别
+
+            .cat.add_categories(new_categories)
+                new_categories      一个标量或者是一个标量的列表，表示添加的新的categories
+            .cat.remove_categories(removals)
+                removals            一个标量或者是一个标量的列表，表示删除的categories
+            .cat.remove_unused_categories()
+                将没有用到categories删除
+            .cat.rename_catergories(new_categories)
+                new_categories:     表示重命名方法，除了可以是list之外还可以是function或者是dict
+                    PS:         对于列表，必须和原来等长；对于functiion，return必须是unique的
+            .cat.reorder_categories(new_categories,ordered)
+                new_categories      ArrayLike对象，改变categories对象的类别顺序
+                ordered             是否转换为有序的
+            .cat.as_ordered()
+                将无序category转换为有序的categories
+            .cat.as_unorderd()
+                将有序category转换为无序的categories
+            
+二、高阶Groupby应用：
+    1.分组转换和“展开”GroupBy:
+        groupbyObj.transform(func):
+            transform       分组，并且会放回
+            对于func():     1.  自变量与apply相同，是index之后的数值整体
+                            2.  如果自变量是一个标量，会将它转换成Series或者DataFrame
+                                如果是Series或者DataFrame，直接返回
+                            3.  在返回了之后，按照原来的pdObj进行填充，大小和原来一样
+                                    相当于“展开”
+    2.分组的时间重新采样：
+        在实际工作中，会遇到先分组之后对于每个分组进行resample的情况
+        此时，可以使用pd.Grouper()实现对于每个分组的分组（即嵌套的分组）
+            pd.Grouper(key,level,freq,axis,sort)
+                key         表示要进行分类的列
+                freq        只有针对时间的序列这个参数才有意义
+                sort        是否将生成的标签进行排序
+        此时可以将Grouper对象放在pdObj.groupby(by=[by,Grouper1,Grouper2...])中
+            可以实现多重分组，尤其是对时间采样而言
+        PS:如果只针对
+
+    
+三、方法链技术：
+    通过使用一连串方法，避免大量的临时变量和函数嵌套的出现，提高整体可读性的技术：
+    在pandas中由以下的特别的方法链用法：
+        DataFrameObj.assgin(newcolumns=v,index=)  <==>  DataFrameObj['newcolummns'] = v
+            用于新添加一列，在添加列的时候为了对齐可以设置index，表示v插入的位置，默认从0开始
+            PS:     左边语句表示的是一个DataFrameObj，不仅完成了赋值，还可以直接调用DataFrame的方法；
+                    而右边表示一个赋值式，没办法直接调用DataFarmeObj方法
+        
+        DataFrameObj.query(expr,*,inplace,**kwargs) <==> [lambda x : str]
+            expr    是一个字符串，可以直接使用cols中的字符串代表Series  (类似groupby)
+                    如果cols字符串中包含空格  应该使用``反引号进行引用
+                    并且可以同时使用 and和or（或者 &和|）
+    
+        函数的应用:
+            自变量是调用的pdObj本身，返回值放在函数所在的位置（包括[]中，方法中等等）
+            为了便于操作，labmda函数更加灵活，可以直接放在任何位置
+    
+    pipe方法：
+        对于pdObj而言，可以通过pipe方法调动各种函数
+            若有 f(pdObj,arg1,arg2...)
+              有  pdObj.pipe(arg1=v1 , arg2=v2,...)
+
+            这两个是等价的，但是后一种可以实现方法链
+    

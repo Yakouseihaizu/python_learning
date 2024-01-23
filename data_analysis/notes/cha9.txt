@@ -1,0 +1,180 @@
+一、matplot入门：
+    1.图片与子图：
+        绘制的对象位于figure中
+        一个figure中可以包含多个子图subplot
+        可以先创建figure然后向其中加入子图：
+            figureObj.add_subplot(nrows,ncols,indexs,kw)
+                nrows/ncols:        划分figure容器的区域,成几行几列
+                indexs:             表示子图所在的位置，从左上到右下
+                                    如果是一个tuple就表示是一个对应的范围
+                                    也可以通过连续的三位数实现类似的功能
+                kw:                 表示子图的其他形式上的设置，如:
+                                    projection:     表示图的类型，默认是正交的XY坐标
+                                                    可以通过polar或者hammer等设置地理图
+                                                        通过3d设置为3d图
+                                    sharex:         表示和该subplot的x方向对齐
+                                    sharey:         表示和该subplot的y方向对齐
+                                    axesclass:      用于设置系统中的类
+        也可以同时设置figure和axes：
+            plt.subplots(nrows,ncols,*,squeeze,sharex,sharey,subplot_kw,gridspec_kw,**fig_kw)
+                返回一个元组：tuple[Figure, ndarray]，其中的ndarray表示是axes的array
+                nrows,ncols同上
+                squeeze:        表示是否压缩维数，默认False -----> 总是返回一个2Darray
+                                                    True  -----> 按照shape返回Scalar，1Darray，2Darray
+                sharex/sharey:  True/'all'：表示全部的x/y轴对齐
+                                'col':      表示一列中的子图合用一套坐标
+                                'row':      表示一行中的子图合用一套坐标
+                                Flase/'none':默认，每个子图坐标之间相互独立
+                其他的参数样式参数如projection等都可以像上面一样设置
+        可以使用以下的方法，调节子图之间的距离和位置：
+            subplots_adjust(left,bottom,right,top,wspace,hspace)
+                left,right,top,bottom是指figure的比例
+                分别是其相对于左边框，右边框，上边框，下边框的位置
+                wspace,hspace是子图之间间隔所占的比例
+    2.颜色、标记和线类型：
+        颜色color：
+            颜色可以通过十六进制，RBG，和字符串的方式设定，也可以使用颜色映射
+            颜色映射colormap常常用在bar或者scatter之类分立的图中，可以通过按照值设定颜色实现
+        标记marker：
+            表示点的图标：如*,^,<,>,o等
+            可以是字符串表示形状，也可以是1,2,3或者是$contain$-----字符串渲染形成的标记
+        线类型：
+            -       实线
+            :       点虚线
+            -.      点划线
+            --      破折线
+            None    没有线型
+    3.刻度、标签和图例：
+            设置图形的X和Y轴的坐标范围
+                plt.xlim(left,right)
+                ax.set_xlim(left,right)
+            设置图形的X和Y轴的label
+                plt.xlabel(xlabel,fontdict,labelpad,*,loc,**kwargs)
+                    xlabel      是设置的文本内容
+                    fontdict    字体设定的字典：包括fontsize,color,family,weight,style等参数
+                    labelpad    label距离坐标轴的距离
+                    loc         'left','center','right'表示label的放置位置
+            设置图形的X轴和Y轴的ticklabel
+                ax.set_xticks(ticks, labels,*,minor,**kwargs)
+                    ticks:      类数组类型，设置tick的位置
+                    labels:     将在对应的tick位置使用label代替数值
+                    minor:      选择自动设置的label和人工设置label的较小值作为刻度
+                ax.set_xticklabels(labels,*,minor:,fontdict,**kwargs)
+                    label:      在对应的tick位置上使用label代替数值，不足向前对齐
+            设置图例：
+                ax.legend(handels,labels)      返回一个legend对象
+                    handels:        图形，可以通过绘图方法获得
+                    labels:         图例名称
+                也可以在绘制方法中设置图例：
+                ax.plot()中的label设置
+
+                legendObj.set_loc(str)         按照str的方法设定图例的位置        
+    4.注释和子图加工：
+        添加文本：
+            ax.text(x,y,s,fontdict) :
+                x,y         左下角的位置
+                s           内容，str
+                fontdict    同上
+            
+        对于箭头和箭头与文本的组合可以使用annote方法：  
+            ax.annotate(text,xy,xytext, xycoords,textcoords,arrowprops,annotation_clip,**kwargs)                 
+                text:           文本内容
+                xy:             tuple/list  标注的位置（箭头的位置）
+                xytext:         文本的位置 默认是xy
+                xycoord         决定注释点的坐标类型，如像，点数，data（默认），百分比等等
+                textcoord       与上面类似
+                annotation_clip 是否只允许在子图之外绘制文本
+                arrowprops:     箭头的设置：
+                                    facecolor       颜色
+                                    headwidth       箭头的宽度
+                                    headlength      箭头的长度
+                                    width           箭头根部的宽带
+                                    shink:          两端箭头收缩所占的比例
+                                除此之外还可以通过arrowstyle设置
+                                    包括'->',']-',等
+                                此时还可以设置箭头的连接线connectionstyle
+                                    有arc3,angle3,arc,angle等
+                                        并在此基础上可以设置angleA，angleB，rad等设置角度
+                                relpos: 注释文本的箭头起始位置（百分比坐标系）
+                还可以通过horizonalalignment和verticalalignment设置文本和箭头的相对位置
+        添加图形Patch：
+            下面添加Patch对象
+            plt.Rectangle(xy,width,height,*,angle,rotation_point,**kwargs)
+                xy              决定左下角的位置
+                width/height    长/宽
+                angle           转过角度
+                rotation_point  转动点，默认左下角（0，0）
+            plt.Circle(xy,radius,**kwargs)
+                xy              圆心坐标
+                radius          半径
+            plt.Polygon(xy,closed) 
+                xy              数组类型，点的位置
+            ax.add_patch(p)     在其中添加Patch
+    5.保存图片：
+        plt.savefig(fname,,**kwargs:    dpi,facecolor,format,bbox_inches)
+            fname       保存路径
+            dpi         每英寸点数的分辨率
+            facecolor   背景颜色
+            format      保存文件的类型，也可以直接在路径中指定
+            bbox_inches 保存图片范围，  ‘tight’除掉周围的空白部分
+    6.matplotlib设置：
+        plt.rc(group,**kwargs)
+            将group默认设置为后面的参数
+二、pandas和seaborn绘图
+    1、折线图plot
+        SeriesObj.plot()
+            label           图例标签
+            ax              所用子图，默认是当前活动的matplot子图
+            style           线形，颜色等
+            alpha           透明度
+            kind            设置图的类型,默认是折线图，还可以设计bar,area,hist,barh,pie等
+            logy/logx/lglog y/x轴/x和y轴 上使用对数坐标
+            use_index       使用对象索引作为刻度标签,默认True
+            rot             刻度标签的转动角度
+            xticks/yticks   x/y轴刻度的设置
+            xlim/ylim       x/y轴范围的限制
+            grid            是否有轴网格
+        DataFrame.plot()
+            同上，但是又新增的内容
+                subplots            将DataFrame中的列的数据画在不同的子图中，
+                                    True表示每个子图，还可以通过tuple的list设置
+                sharex/shaery       在上面的基础上，共享x/y轴
+                figsize             figure对象的大小元组
+                title               标题
+                legend              添加子图图例，默认为True
+                sort_columns        按字母表排序
+    2、柱状图：
+        SeriesObj.plot.bar()/SeriesObj.plot.barh(x,y,color,*,subplots,**kwargs)
+            x/y         x轴/y轴上数值，默认使用index和value
+            其他同上
+        DataFrameObj.plot.bar()/DataFrameObj.plot.barh()
+            同上。
+            DataFrame的columns的name会默认作为图例的标题，index.name会默认作为xlabel
+            但是可以使用stacked=True实现柱状图的堆叠，更好的展示比例关系
+        除此之外还可以使用seaborn包实现美观的输出
+            sns.barplot(x,y,hue,data,orient)
+                方法的x和y表示从DataFrame中抽取的作为x和y的columns
+                hue允许通过额外的分类值将数据分离(即除了xy之外)
+                data表示数据
+                orient表示朝向'h'表示水平
+                              'v'表示竖直
+                              'x'/'y'   表示按照哪一个作为分类基准
+            默认情况下出现的直线表示95%的置信区间
+        seaborn还可以自己设计风格
+            seaborn.set(style)
+    3、直方图和密度图：
+        pdObj.plot.hist(bins)
+        pdObj.plot.density()    是按照已有的分布进行KDE拟合得到的
+        sns.histplot(data,bins)     直方图
+        sns.distplot(data,bins)     密度图，同时具有直方图和概率密度曲线
+                                    对于DataFrame取第一列
+    4、散点图或点图：
+        sns.regplot(data,x,y,...)
+            同上
+            会返回包含散点，回归曲线和置信区间等，可以通过设置xx_kws等设置
+        sns.pairplot(data,diag_kind，plot_kws,...)      将DataFrame中所有的变量的关系通过散点（不同）和密度（同一）图展示
+            diag_kind       表示拟合的方式，如kde等等
+            plot_kws        字典设置非对角线的pair图
+    
+    
+

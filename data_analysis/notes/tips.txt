@@ -1,0 +1,10 @@
+模拟多次随机不重复采样求概率时：
+    使用DataFrame作为数据对象
+    先用np.zeros()填充所有的空间（不然需要使用contact拼接很麻烦）
+    然后对每一行/列apply采样函数，（axies设为1，表示对整个Series进行）
+    函数直接return np.random.premutation（）得到采样结果即可
+    
+    之后可以通过boolDataFrame进行判断，
+    再通过any()，判断是否有True/all(),判断是否全部为True
+    之后用sum()计算最后的频数
+    最后求得概率

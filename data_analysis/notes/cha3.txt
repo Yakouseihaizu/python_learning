@@ -1,0 +1,376 @@
+一、元组：
+    元组属于不可变元素，不能更改其内容
+    但是可以更改元组中可变元素的内容
+    In []:  tup = tuple(['foo',[1,2],True])
+            tup[1].append(3)
+    Out[]:  ('foo',[1,2,3],True)
+    
+    类似字符串，+将多个元组相连，*将多个相同的元组相连 都适用
+
+    1.元组拆包：
+        元组可以直接赋值给变量,也可以由变量直接赋值（不用加括号）
+        嵌套的元组也可以拆包：
+            如：In []:  tup = 4,5,(6,7,8)
+                        a,b,(c,d,e) = tup
+                        print(a,b,c,d,e)
+                Out[]:  4 5 6 7 8
+        
+        如：
+        In []:  # 利用元组完成交换
+                a,b = (1,2)
+                print(a,b,sep='$$')
+                a,b = b,a
+                print(a,b,sep='$$')
+        Out[]:  1$$2
+                2$$1
+
+        PS:部分采集元组中的元素：
+            可以使用*name ------------------- 表示一个列表
+            如：
+            In []:  a,b,(c,*rest) = tup
+                    print(a,b,c,rest)
+            Out[]:  4 5 6 [7, 8]
+            
+            其中的rest部分可以丢弃，也可以用 *_ 等表示
+    
+    2.元组方法：
+        tupleObj.count(elem) ----------------------------- 返回一个整数，表示elem在tuple中出现的个数
+
+二、列表：
+    list是一种可变元素，可以直接改变其中包含的元素
+    1.list方法：
+        listObj.append(value)
+        listObj.insert(index,value)
+        listObj.pop(index)
+        listObj.remove(value)
+        
+            PS:还有collections.deque双端队列，有类似的作用
+                deque(values,maxlen) ---------------------- values可以是列表，元组等等，maxlen表示最长长度
+                dequeObj.append/appendlest(value) --------- 从右边或者从左边添加元素
+                dequeObj.pop/popleft()  ------------------- 从右边或者从左边弹出元素
+                dequeObj.extend/extendleft(values) -------- 从右边或者从左边添加多个元素
+                dequeObj.insert(index,values) ------------- 与list相同
+                dequeObj.reverse() ------------------------ 将队列中所有的元素反向
+                dequeObj.rotate(int) ---------------------- 将队列中所有元素向后移动int
+    2.连接和联合列表：
+        两个列表可以 + 连接
+        listObj.extend(values) ---------------------------- 在listObj添加多个元素
+            PS：适用extend方法效率更高
+    3.排序：
+        listObj.sort(key,reverse) ------------------------- 将listObj的元素按照key(一个函数)进行排序，并规定升序(F)降序(T)
+    4.二分搜索和已排序列表的维护：
+        bisect模块
+        bisect.bisect(list,value) ------------------------- 返回应该将value插入的位置的index
+        bisect.insort(list,value) ------------------------- 将value插入a中适合的位置
+            PS:列表应该是按照升序排列好的，bisect和insort不会关注顺序是否正确
+    5.切片：
+        list[start:stop] ----------------------------------- 包含start，不包含stop，最后会有stop-start个元素
+        list[start:stop:seq] ------------------------------- 同上，但是从start开始，按照seq的步幅进行切片
+                                    PS：seq为负数时，是从stop-1（含）开始,向前切片
+                                        如：list[::-1]就可以人为是反转了list
+                                        seq作为负数时，start和stop必须为默认的开始和结尾，否则会返回空列表
+    
+三、内建序列函数：
+    1.enumerate(iter,start) -------------------------------- 能同时返回index和value，其中index从start开始依次后推
+        In []:  lst = [1,2,3,4,5,6,7]
+                for i,v in enumerate(lst,2):
+                print(i,v,sep=' -> ')
+        Out[]:  2 -> 1
+                3 -> 2
+                4 -> 3
+                5 -> 4
+                6 -> 5
+                7 -> 6 
+                8 -> 7
+    2.zip(iters) -------------------------------------------- 能将元素重新进行配对，类似横向变纵向
+        In []:  sq1 = ['foo','bar','baz']
+                sq2 = ['one','two','three']
+                zipped = zip(sq1,sq2)
+                list(zipped)
+        Out[]:  [('foo', 'one'), ('bar', 'two'), ('baz', 'three')]
+        PS：对于长度不统一的iters，由最短的序列决定
+
+        此外zip还有一种特殊的用法：
+        In []:  pitchers = [('Nolan','Ryan'),('Roger','Clemens'),('Schilling','Crut')]
+                first_names,last_names = zip(*pitchers)   #注意*
+                print(first_names,last_names,sep='\n')
+        Out[]:  ('Nolan', 'Roger', 'Schilling')
+                ('Ryan', 'Clemens', 'Crut')
+        即逆转适用 注意*,相当于拆了一次
+    3.sorted(iter,key,reverse):
+        类似sort，但是会返回一个新建的排序完成的序列
+    4.reversed(reversible):
+        生成一个生成器，将序列的元素倒序排列
+四、字典：
+    1.dictObj[index] = value -------------------------------- 在字典中插入或者设置index：value的键值对
+    2.del dictObj[index] ------------------------------------ 删除字典中的index及其对应的值
+    3.dictObj.pop(index) ------------------------------------ 弹出index对应的值
+    4.dictObj.keys() ---------------------------------------- 返回所有键的迭代器
+    5.dictObj.values() -------------------------------------- 返回所有值的迭代器
+    6.dictObj.items() --------------------------------------- 返回所有键值对的迭代器
+    7.dictObj.update(Newdict) ------------------------------- 将新的字典叠加在dictObj中，如果新字典和旧字典中由相同的键，值会被覆盖
+
+    从序列生成字典：
+        dictObj = dict((zip(key_list,value_list)))
+        生成 以key_list的元素为key，以value_list的元素为值 的字典。
+            key_list可以是list，也可以是迭代器
+    
+    默认值：
+        value = some_dict.get(key,default_value) ------------ 
+                                     --------- 如果在dict中找到key键，返回key对应的value，
+                                               否则就返回设置的默认值
+        some_dict.stdefault(key,defaultvalue) ---------------
+                                     --------- 如果在dict中找到了key键，没有返回key对应的值，
+                                               否则就插入以key为键，以默认值为值的键值对，并返回key的值
+        
+        collection.defaultdict类：
+            dictObj = defaultdict(type)
+            生成一个defaultdict类，将没有出现的key对应的值设置为对应的type的空值
+                比如：list -> [], int -> 0, dict -> {}等
+    
+    有效的字典键类型：
+        字典的键是一个不可变的对象，如标量或者元组。
+        可以通过hash函数来判断是否可以作为字典的键
+        如：
+        In []:  hash('string')
+        Out[]:  -2677630036951115710
+
+        In []:  hash((1,2,(2,3)))
+        Out[]:  -9209053662355515447
+        
+        In []:  hash((1,2,[2,3]))
+        Out[]:  
+                TypeError: unhashable type: 'list'
+        
+五、集合：
+        集合没有顺序，也不会重复。
+        可以通过 set函数 或者 {}+字面值集 的方式创建
+
+        1.集合的运算：
+            集合支持数学上对于集合的运算，如交、并、差、对称差等
+            集合之间的运算可以通过方法或者二元运算符完成：
+
+            a.add(x)                            N/A          将元素加入集合a
+            a.clear()                           N/A          清空集合中的所有元素
+            a.remove(x)                         N/A          从集合中移除x元素
+            a.pop()                             N/A          弹出任意元素，集合为空会KeyError
+
+            a.union(b)                          a|b          并
+            a.update(b)                         a|=b         将a内容设置为a、b的并集
+            a.intersection(b)                   a&b          交
+            a.intersection_update(b)            a&=b         将a内容设置为a、b的交集
+            a.difference(b)                     a-b          差
+            a.difference.update(b)              a-=b         将a内容设置为a、b的差集 
+            a.symmertric_difference(b)          a^b          对称差
+            a.symmertric_difference_update(b)   a^=b         将a内容设置为a、b的对称差集
+            
+            a.issubset(b)                       N/A           a是否是b的子集
+            a.issuperset(b)                     N/A           a是否是b的母集
+            a.isdisjoint(b)                     N/A           a和b之间是否没有交集
+                                                a==b          a与b是否相等
+六、列表，集合和字典的推导式：
+    [expr for val in collection if condition]
+    {key : value for key,value in collection if condition}
+        PS: collection 如enumerate 或者 zip等等
+    {expr for val in collection if condition}
+
+    map(function, colletion) --------------------------------- 返回一个迭代器，
+                                                               结果是依次都用colletion中元素，返回function的值
+    
+    嵌套列表推导式：    常用作内部元素的扁平化处理
+        In []:  all_data = [['John','Emily','Micheal','Mary','Steven'],
+                ['Maria','Juan','Javier','Natalia','Pilar']]
+                result = [name for names in all_data for name in names if name.count('e')>=2 ]
+                result
+        Out[]:  ['Steven']
+
+        类似使用for进行多次嵌套：
+            for names in all_data:
+                for name in names:
+                    if name.count('e') >=2
+                        result.append(name)
+
+七、函数：
+    1.位置参数和关键词参数：   略
+    
+    2.命名空间、作用域和本地函数：
+        1.在函数内部创建的变量 的作用域为函数的范围：
+        In []:  def func():
+                    a = []
+                    for i in range(5):
+                        a.append(i)
+                func()
+                a
+        Out[]:  Error
+        2.在函数外部创建的变量 的作用域包括函数
+        In []:  a = []
+                def func():
+                    for i in range(5):
+                    a.append(i)
+                func()
+                print(a)
+        Out[]:  [0, 1, 2, 3, 4]
+
+            PS： 若函数中有对于同名外部变量的 创建、赋值等操作，则视为重新创建了一个变量，作用域为函数内部
+            In []:  a = []
+                    def func():
+                        a = [1]
+                        for i in range(5):
+                        a.append(i)
+                    func()
+                    print(a)
+            Out[]: []
+
+        3.在函数中改变外部的全局变量 需要使用global关键字：
+            In []:  a = None
+
+                    def func():
+                        global a
+                        a = []
+                        for i in range(5):
+                            a.append(i)
+                    func()
+                    print(a)
+            Out[]:  [0, 1, 2, 3, 4]
+
+    3.返回多个值：
+        返回多个值类似于一个拆包的元组，当然也可以用colltion来实现
+        In []:  def f():
+                    a = 5
+                    b = 6
+                    c = 7
+                    return a,b,c
+
+                a,b,c = f()
+                print(a,b,c)
+        Out[]: 5 6 7
+    4.函数也是一个对象：
+        函数也是一个对象，可以用来组成collection,也可以作为参数传递给其他函数（如：map）
+        In [1]: def remove_punctuation(value):
+                    return re.sub(r'[#?!]','',value)
+                clean_ops = [str.strip,remove_punctuation,str.title]
+                def clean_strings2(strings,ops):
+                    result = []
+                    for string in strings:
+                        for op in ops:
+                            string = op(string)
+                        result.append(string)
+                    return result
+        In [2]: clean_strings2(states,clean_ops)
+        Out[ ]: ['Alabama',
+                 'Georgia',
+                 'Georgia',
+                 'Georgia',
+                 'Florida',
+                 'South Carolina',
+                 'West Virginial']
+    
+    5.匿名函数lambda
+        匿名函数是一种通过单个语句生成函数的方式，其结果是返回值。
+        匿名函数使用lambda关键词定义，该关键词仅表示 “我们声明一个匿名函数”
+        
+        匿名函数的优点：
+            1.代码更小，适合于没有反复出现的情况
+            2.常常更适合作为 返回值 进行传递
+        
+    5.柯里化
+        将高阶函数的某些参数固定，得到新的参数
+        常用functools.partial(func,*agrv)来实现
+        当然也可以使用lambda
+
+八、生成器：
+    生成器 是指使用了 yield 关键词的函数
+    生成器是一种用于遍历的方法，常常需要和迭代器同时存在
+    每次在生成器内部的过程中，都会且只会 yeild 对应的数值（生成），
+    之后返回循环暂停的位置再次迭代，直到结束（类似于一个新的迭代器）
+
+    In []:  def sqaure(n=10):
+                print('Generating squares form 1 to {0}'.format(n**2))
+                for i in range(1,n+1):
+                    yield i**2
+
+            gen = sqaure()
+            for i in gen:
+                print(i,end=' ')
+    Out[]:  Generating squares form 1 to 100
+            1 4 9 16 25 36 49 64 81 100 
+    
+    itertools模块
+        combinations(iterable, k) ------------------------------ 生成iterable中所有的 k个元素的子集，没有顺序
+        permutations(iterable, k) ------------------------------ 生成iterable中所有的 k个元素的子集，有顺序
+        product(*iterable, repeat=1) --------------------------- 生成iterables的笛卡尔积组成的集合，repeat表示重复几遍
+        groupby(iterable, [,keyfunc]) -------------------------- 将**相邻**的元素按照keyfunc函数进行分组，生成所有的key: value的键值对
+
+        combinations_with_repalce(iterable,k) ------------------ 同combinations，但是允许重复
+        accumulate(iterable,func) ------------------------------ 将iterable中的元素经过二元函数func，第一个参数是之前的返回值，
+                                                                 第二个参数是iterable中的下一个值，生成的值就是函数的返回值
+                                                                 如果iterable中只有一个元素，则返回它本身
+        其他的详见 https://zhuanlan.zhihu.com/p/51003123
+    
+九、异常：
+    略
+    处理多个异常：
+        try :
+            balabalabala
+        except (Error1,Error2):
+            balabalabala
+        else:
+            balabalabala
+        finally:             # 无论如何都会执行
+            balabalabala 
+    
+    Ipython中的异常往往会显示上下文
+十、文件和操作系统：
+    略
+    file可以作为一个迭代器，如
+    In []:  path = 'example.txt'
+            with open(path) as fp:
+                for line in fp:                   # line中有最后的换行符
+                    print(line.rstrip())
+    Out[]:  abcde
+            12345
+            aiueo
+            kakikukeko
+
+    对file的方法：
+        read([size]) ----------------------------------- 在迭代器中读取size个字节
+        readlines([size]) ------------------------------ 返回文件中行内容的列表，size可选，默认全部
+        write(str) ------------------------------------- 将字符串写入文件
+        writelines(strings) ---------------------------- 将字符串序列写入文件,可以是迭代器、list等，也可以是for的形式（相当于没有封装手动生成器）
+        flush() ---------------------------------------- 将I/O缓冲区的内容刷新到硬盘
+        tell() ----------------------------------------- 返回句柄的当前的位置，该第i个字节，返回i
+        seek(pos) -------------------------------------- 将句柄重定位为int处
+
+    不同的模式
+        r ---------------------------------------------- 只读模式
+        w ---------------------------------------------- 只写模式，创建新文件，同名的路径会被删除
+        x ---------------------------------------------- 只写模式，创建新文件，同名的路径会创建失败
+        a ---------------------------------------------- 添加到已存在的文件中
+        r+ --------------------------------------------- 读写模式
+        b ---------------------------------------------- 二进制文件的模式，添加到别的模式中，如rb,wb
+        t ---------------------------------------------- 文件的文本模式（自动将字节解码为Unicode），
+                                                         没有指明模式，就默认该模式
+    
+    字节和Unicode文件：
+        使用文本读取的过程中，有时遇到长度可变的Unicode编码(如utf-8)会提前读取大量的字节，然后进行解码处理
+        而使用二进制文本读取的过程中，则不会，只会读取对应数量的字符
+
+        In []:  with open('sink.txt','r',encoding='utf-8') as fp:
+                    chars = fp.read(10)
+                chars
+        Out[]:  "I'm 杨堃"
+
+        In []:  with open ('sink.txt','rb') as fp:
+                    chars = fp.read(5)
+                chars
+        Out[]:  b"I'm \xe6"             #只读取了“杨堃”的一半
+
+        In []:  with open ('sink.txt','rb') as fp:
+                    chars = fp.read(7)
+                chars
+        Out[]:  b"I'm \xe6\x9d\xa8"
+        In []:  chars.decode('utf8')
+        Out[]:  "I'm 杨"                #只有当unicode字符完整的情况下才能解码
+
+        可以在读取或者写入的是时候在open()函数中的encode关键词设置对应的编码方式，便于在不同编码方式的文件之间相互转化
+        使用seek方法的时候也需要注意，如果正好位于Unicode内部，则之后的read等可能会出错

@@ -1,0 +1,55 @@
+二元操作符：
+    a = 0011 1100
+    b = 0000 1101
+    -----------------
+    a&b = 0000 1100
+    a|b = 0011 1101
+    a^b = 0011 0001
+    ~a  = 1100 0011
+可变对象和不可变对象：
+    可变对象      如：列表，字典
+    不可变对象    如：字符串，元组
+format方法：
+    In []:  template = "{0:.2f} {1:s} are worth US${2:d}"
+            template.format(4.5560,'Argentine Pesos',1)
+    Out[]:  '4.56 Argentine Pesos are worth US$1'
+字节和Unicode:
+    In []:  val = '杨堃'
+    
+    In []:  val
+    Out[]:  '杨堃'
+        这里是unicode
+
+    In []:  val_utf8 = val.encode('utf-8')
+        转化成utf-8
+
+    In []:  val_utf8
+    Out[]:  b'\xe6\x9d\xa8\xe5\xa0\x83'
+        字节类型的变量
+
+    In []:  type(val_utf8)
+    Out[]:  bytes
+
+    In []:  val_utf8.decode('utf-8')
+    Out[]:  '杨堃'
+        将bytes对象转化成Unicode
+三元表达式：
+    (true_value) if (true_condition) else (false_value)
+    类似于 value = (condition)?true_value:false_value
+
+常用魔法命令：
+    %quickref ------------------------ 显示IPython快速参考卡
+    %magic --------------------------- 显示所有可用的魔法命令的详细文档
+    %debug --------------------------- 从最后发生报错的底部进入交互式调试器
+    %hist ---------------------------- 打印命令输入（也可以是输出）命令的历史
+    %pdb ----------------------------- 出现任意报错之后自动进入调试器
+    %paste --------------------------- 从剪切板值执行已经于线格式化的python代码
+    %cpaste -------------------------- 打开一个特殊提示符，手动粘贴执行的Python代码
+    %reset --------------------------- 删除交互式命名空间中所有的变量/名称
+    %page OBJECT --------------------- 通过分页器更美观的打印显示一个对象
+    %run script.py ------------------- 在IPython中运行一个Python脚本
+    %prun statement ------------------ 使用CProfile执行语句，并报告输出
+    %time statement ------------------ 报告单个语句的执行时间
+    %timeit statement ---------------- 多次运行单个语句计算平均执行时间；在估算代码最短执行时间时有用
+    %who, %who_ls,%whos -------------- 根据不同级别的信息/详细程度，展示交互命名空间中定义的变量/名称
+    %xdel variable ------------------- 在IPython内部删除一个变量，清除有关的引用
